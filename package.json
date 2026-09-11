@@ -1,0 +1,13 @@
+{
+  "name": "supermercado-api",
+  "version": "1.0.0",
+  "description": "Backend Supermercado Node.js + Express + PostgreSQL",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}
