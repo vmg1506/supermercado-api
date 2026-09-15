@@ -1,30 +1,34 @@
-import pool from '../config/db.js'
+
+import { Provider } from '../config/models/index.js'
 
 export const providerModel = {
 
     getAllProviders: async () => {
-        const results = await pool.query('SELECT * FROM providers ORDER BY id ASC')
-        return results.rows
+        const results = await Provider.findAll({ order: [['id', 'ASC']] })
+        return results.map(p => p.toJSON())
     },
 
     getProviderById: async (id) => {
-        const results = await pool.query('SELECT * FROM providers WHERE id = $1', [id])
-        return results.rows[0]
+        const results = await Provider.findByPk(id)
+        return results ? results.toJSON() : undefined
     },
 
     createNewProvider: async (name, phone, email, city) => {
-        const results = await pool.query('insert into PROVIDERS (name, phone, email, city) VALUES ($1, $2, $3, $4) RETURNING *', [name, phone, email, city])
-        return results.rows[0]
+        const results = await Provider.create({ name, phone, email, city })
+        return results.toJSON()
     },
 
     updateProvider: async (id, name, phone, email, city) => {
-        const results = await pool.query('UPDATE providers SET name = $1, phone = $2, email = $3, city = $4 WHERE id = $5 RETURNING *', [name, phone, email, city, id])
-        return results.rows[0]
+        const results = await Provider.findByPk(id)
+        if(!results) return undefined
+        results.set({ name, phone, email, city })
+        await Provider.save()
+        return provider.toJSON()
     },
 
     deleteProviderdb: async (id) => {
-        const { rowCount } = await pool.query('DELETE FROM providers WHERE id = $1 RETURNING id', [id])
-        return rowCount > 0
+        const deletedRows = await Provider.destroy({ where: { id } })
+        return deletedRows > 0
     }
 }
 

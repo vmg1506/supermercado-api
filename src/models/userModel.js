@@ -1,32 +1,36 @@
-import { pool } from "../config/db.js";
+import { User } from "../config/models/User.js"
 
 
 export const UserModel = {
     getAll: async () => {
-        const results = await pool.query('SELECT * FROM users ORDER BY id ASC')
-        return results.rows
+        const results = await User.findAll({ order: [['id', 'ASC']] })
+        return results.map(u => u.toJSON())
     },
 
     getById: async (id) => {
-        const results = await pool.query('SELECT * FROM users WHERE id = $1', [id])
-        return results.rows[0]
+        const results = await User.findByPk(id)
+        return results ? results.toJSON(): undefined
     },
 
-    create: async (name, email) => {
-        const results = await pool.query(
-            'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
-            [name, email]
-        )
-        return results.rows[0]
+    create: async (name, email, role) => {
+        const results = {name, email}
+        if (role !== undefined) results.role = role
+        const user = await User.create(results)
+        return user.toJSON()
     },
 
-    update: async (id, name, email) => {
-        await pool.query('UPDATE users SET name = $1, email = $2 WHERE id = $3', [name, email, id])
-        return true
+    update: async (id, name, email, role ) => {
+        const results = {name, email}
+        if (role !== undefined) results.role = role
+        const [affectedRows] = await User.update(results, { where: { id }})
+        return affectedRows > 0
     }, 
     
     delete: async (id) => {
-        await pool.query('DELETE FROM users WHERE id = $1', [id])
-        return true
+        const deletedRows = await User.destroy({where: { id } })
+        return deletedRows > 0
     }
 }
+
+
+

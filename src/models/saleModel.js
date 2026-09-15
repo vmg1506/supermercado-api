@@ -1,78 +1,59 @@
-import pool from '../config/db.js'
+import { sequelize, Sale, SaleDetail, Product } from '../config/models/index.js'
 
-export const saleModel ={
-    createSaleWithDetails:  async (userId, items) => {
-        const client = await pool.connect()
-        try {
-            await client.query('BEGIN')
-
-            const saleResult = await client.query(
-                'INSERT INTO sales (user_id, total) VALUES ($1, 0) RETURNING *', [userId]
-            )
-            const saleId = saleResult.rows[0].id
+export const saleModel = {
+    createSaleWithDetails: async (userId, items) => {
+        return sequelize.transaction(async (t) => {
+            const sale = await Sale.create({ userId, total: 0 }, { transaction: t })
             let calculatedTotal = 0
-
             for (const item of items) {
                 const { productId, quantity } = item
-
-                const productRes = await client.query('SELECT price, stock FROM products WHERE ID = $1', [productId])
-                if (productRes.rows.length === 0) {
+                const product = await Product.findByPk(productId, { transaction: t, lock: t.LOCK.UPDATE })
+                if (!product) {
                     throw new Error(`Producto con ID ${productId} no existe`)
                 }
-
-                const { price, stock } = productRes.rows[0]
-                if (stock < quantity) {
+                if (product.stock < quantity) {
                     throw new Error(`Stock insuficiente para el producto ID ${productId}`)
                 }
-
-                const itemSubtotal = Number(price) * quantity
+                const itemSubtotal = Number(product.price) * quantity
                 calculatedTotal += itemSubtotal
-
-                await client.query(
-                    'INSERT INTO sale_details (sale_id, product_id, quantity, price) VALUES ($1,$2, $3, $4)', 
-                    [saleId, productId, quantity, price]
-                )
-
-                await client.query(
-                    'UPDATE products SET stock = stock - $1 WHERE id = $2', [quantity,productId]
-                )
+                await SaleDetail.create({
+                    saleId: sale.id,
+                    productId,
+                    quantity,
+                    price: product.price
+                }, { transaction: t })
+                product.stock -= quantity
+                await product.save({ transaction: t })
             }
-
-            const finalSale = await client.query(
-                'UPDATE sales SET total = $1 WHERE id = $2 RETURNING *',
-                [calculatedTotal, saleId]
-            )
-
-            await client.query('COMMIT')
-            return finalSale.rows[0]
-        } catch (error) {
-            await client.query('ROLLBACK')
-            throw error
-        } finally {
-            client.release()
-        }
+            sale.total = calculatedTotal
+            await sale.save({ transaction: t })
+            return sale.toJSON()
+        })
+       
     },
-
     getAllSales: async () => {
-        const results = await pool.query('SELECT * FROM sales ORDER BY id DESC')
-        return results.rows
+        const sales = await Sale.findAll({ order: [['id', 'DESC']] })
+        return sales.map(s => s.toJSON())
     },
-
     getSaleById: async (id) => {
-        const saleQuery = 'SELECT * FROM sales WHERE id =$1'
-        const detailsQuery = `
-            SELECT sd.id, sd.product_id as "productId", p.name as "productName", sd.quantity, sd.price
-            FROM sale_details sd
-            JOIN products p on sd.product_id = p.id
-            WHERE sd.sale_id =$1
-        `
-        const saleRes = await pool.query(saleQuery, [id])
-        if (saleRes.rows.length === 0 ) return null
-
-        const detailRes = await pool.query(detailsQuery, [id])
+        const sale = await Sale.findByPk(id, {
+            include: [{
+                model: SaleDetail,
+                as: 'details',
+                include: [{ model: Product, as: 'product', attributes: ['name'] }]
+            }]
+        })
+        if (!sale) return null
+        const plain = sale.toJSON()
         return {
-            ...saleRes.rows[0],
-            details: detailRes.rows
+            ...plain,
+            details: plain.details.map(d => ({
+                id: d.id,
+                productId: d.productId,
+                productName: d.product ? d.product.name : null,
+                quantity: d.quantity,
+                price: d.price
+            }))
         }
     }
 }
