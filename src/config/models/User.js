@@ -17,11 +17,11 @@ export const User = sequelize.define('User', {
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unque: true
+        unique: true
     },
     role: { 
         type: DataTypes.STRING,
-        defaultType: 'client'
+        defaultValue: 'client'
     }
 }, {
     tableName: 'users',

@@ -1,6 +1,6 @@
 
 import { Provider } from '../config/models/index.js'
-
+ 
 export const providerModel = {
 
     getAllProviders: async () => {
@@ -23,7 +23,7 @@ export const providerModel = {
         if(!results) return undefined
         results.set({ name, phone, email, city })
         await Provider.save()
-        return provider.toJSON()
+        return Provider.toJSON()
     },
 
     deleteProviderdb: async (id) => {
