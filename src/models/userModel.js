@@ -23,7 +23,9 @@ export const UserModel = {
         const results = {name, email}
         if (role !== undefined) results.role = role
         const [affectedRows] = await User.update(results, { where: { id }})
-        return affectedRows > 0
+        if (affectedRows === 0) return undefined
+        const updated = await User.findByPk(id)
+        return updated.toJSON()
     }, 
     
     delete: async (id) => {

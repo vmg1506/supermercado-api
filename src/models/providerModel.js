@@ -22,8 +22,8 @@ export const providerModel = {
         const results = await Provider.findByPk(id)
         if(!results) return undefined
         results.set({ name, phone, email, city })
-        await Provider.save()
-        return Provider.toJSON()
+        await results.save()
+        return results.toJSON()
     },
 
     deleteProviderdb: async (id) => {

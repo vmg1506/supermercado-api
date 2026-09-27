@@ -29,13 +29,13 @@ export const createUser = async (request, response) => {
     try {
         const { name, email, role } = request.body
         if (!name || !email) {
-            return response.status(400).json({ error: 'Nombre y email son requerids' })
+            return response.status(400).json({ error: 'Nombre y email son requeridos' })
         }
         if (role !== undefined && !ALLOWED_ROLES.includes(role)) {
             return response.status(400).json({ error: `Rol inválido. Valores permitidos: ${ALLOWED_ROLES.join(', ')}` })
         }
         const nuevoUsuario = await UserModel.create(name, email, role)
-        response.status(201).send(`Usuario agregado con el ID: ${nuevoUsuario.id}`)
+        response.status(201).json(nuevoUsuario)
     } catch (error) {
         response.status(500).json({ error: 'error al crear usuario' })
     }
@@ -52,7 +52,7 @@ export const updateUser = async (request, response) => {
         if (!updatedUser) {
             return response.status(404).json({ message: 'Usuario no encontrado para actualizar' })
         }
-        response.status(200).json({ message: 'Usuario actualizado', users: updatedUser })
+        response.status(200).json({ message: 'Usuario actualizado', user: updatedUser })
     } catch (error) {
         response.status(500).json({ message: 'Error al actualizar usuario', error: error.message })
     }

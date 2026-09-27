@@ -4,14 +4,14 @@ import { Product, Provider } from '../config/models/index.js'
 export const productModel = {
     getAllProducts: async () => {
         const products = await Product.findAll({
-            include: [{ model: Provider, as: 'provider', ATTRIBUTES: ['id','name'] }]
+            include: [{ model: Provider, as: 'provider', attributes: ['id','name'] }]
         })
 
         return products.map(p => ({
             id: p.id,
             name: p.name,
             description: p.description,
-            price: p.peice,
+            price: p.price,
             stock: p.stock,
             providerId: p.provider ? p.provider.id: null,
             providerName: p.provider ? p.provider.name : null
