@@ -10,10 +10,7 @@ supermercado-app/
 
 ## Integrantes
 
-- Nombre Apellido
-- Nombre Apellido
-- Nombre Apellido
-- Nombre Apellido
+- Victor Manuel Grajales Roman
 
 ## Arquitectura
 
